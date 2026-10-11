@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calorie Zone</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow column — tabs, shared details, then the active calculator's result */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --fg:#17201d; --muted:#5d6b66; --line:#d9e0dd;
+  --accent:#1f6f5c;
+  --loss:#2f6fb3; --keep:#2e8a5a; --gain:#c27a12;
+  --loss-soft:#e3edf8; --keep-soft:#e2f2e9; --gain-soft:#f8eddc;
+  --display:"Familjen Grotesk","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121816; --surface:#1a2220; --fg:#e6ece9; --muted:#97a6a0; --line:#2c3633;
+  --accent:#5cc0a2; --loss:#6fa8e6; --keep:#5fc48d; --gain:#e2a64a;
+  --loss-soft:#1b2a3a; --keep-soft:#1a2e24; --gain-soft:#33281a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121816; --surface:#1a2220; --fg:#e6ece9; --muted:#97a6a0; --line:#2c3633;
+  --accent:#5cc0a2; --loss:#6fa8e6; --keep:#5fc48d; --gain:#e2a64a;
+  --loss-soft:#1b2a3a; --keep-soft:#1a2e24; --gain-soft:#33281a; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:480px;margin:0 auto;padding-block:32px 48px;padding-inline:16px;display:flex;flex-direction:column;gap:20px}
+h1{font-family:var(--display);font-weight:700;font-size:1.9rem;margin:0;letter-spacing:-.01em}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{font:inherit;font-family:var(--display);font-weight:500;font-size:1rem;background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:8px 12px;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent);font-weight:700}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.fields.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.field{display:flex;flex-direction:column;gap:6px;font-size:.85rem;color:var(--muted)}
+.field input{font:inherit;font-family:var(--mono);font-size:1.3rem;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 12px;width:100%;min-width:0}
+.field input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.group{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.group legend{font-size:.85rem;color:var(--muted);padding:0;margin-bottom:6px}
+.opts{display:grid;gap:6px}
+.opts.two{grid-template-columns:1fr 1fr}
+.opts.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:440px){.opts.four{grid-template-columns:1fr 1fr}}
+.opts label{position:relative;display:block}
+.opts input{position:absolute;opacity:0;width:1px;height:1px}
+.opts span{display:flex;align-items:center;justify-content:center;text-align:center;height:100%;min-height:44px;padding:8px 6px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);font-size:.88rem;cursor:pointer;line-height:1.25}
+.opts input:checked+span{border-color:var(--accent);background:var(--accent);color:var(--surface);font-weight:500}
+.opts input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.panel{display:flex;flex-direction:column;gap:12px;padding-top:4px;border-top:1px solid var(--line)}
+.panel>h2{font-family:var(--display);font-size:1.1rem;margin:12px 0 0}
+.zones{display:flex;flex-direction:column;gap:10px}
+.zone{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 16px;border-radius:8px}
+.zone .name{font-family:var(--display);font-weight:700;font-size:1.05rem}
+.zone .range{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:1.25rem;font-weight:500;text-align:right}
+.loss{background:var(--loss-soft);color:var(--loss)}
+.keep{background:var(--keep-soft);color:var(--keep)}
+.gain{background:var(--gain-soft);color:var(--gain)}
+.result{padding:16px;border-radius:8px;display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line)}
+.result.loss{background:var(--loss-soft);border-color:transparent}
+.result.gain{background:var(--gain-soft);border-color:transparent}
+.result.keep{background:var(--keep-soft);border-color:transparent}
+.headline{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:2rem;font-weight:500;line-height:1.1}
+.rows{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;margin:0;color:var(--fg)}
+.rows dt{color:var(--muted);font-size:.88rem}
+.rows dd{margin:0;text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.note{color:var(--muted);font-size:.85rem;margin:0}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>Calorie Zone</h1>
+
+  <div class="tabs" role="tablist" aria-label="Calculators">
+    <button role="tab" id="tabZones" aria-selected="true" aria-controls="panelZones" type="button">Calorie ranges</button>
+    <button role="tab" id="tabLoss" aria-selected="false" aria-controls="panelLoss" type="button">Expected loss</button>
+  </div>
+
+  <fieldset class="group">
+    <legend>Units</legend>
+    <div class="opts two">
+      <label><input type="radio" name="unit" id="unitKg" value="kg" checked><span>kg / cm</span></label>
+      <label><input type="radio" name="unit" id="unitLb" value="lb"><span>lb / in</span></label>
+    </div>
+  </fieldset>
+
+  <fieldset class="group">
+    <legend>Sex</legend>
+    <div class="opts two">
+      <label><input type="radio" name="sex" id="sexM" value="m"><span>Male</span></label>
+      <label><input type="radio" name="sex" id="sexF" value="f"><span>Female</span></label>
+    </div>
+  </fieldset>
+
+  <div class="fields">
+    <label class="field" for="weight"><span id="wLab">Weight (kg)</span><input id="weight" type="text" inputmode="decimal" autocomplete="off" value="88.1"></label>
+    <label class="field" for="height"><span id="hLab">Height (cm)</span><input id="height" type="text" inputmode="decimal" autocomplete="off" value="175"></label>
+    <label class="field" for="age">Age<input id="age" type="text" inputmode="numeric" autocomplete="off" value="40"></label>
+  </div>
+
+  <fieldset class="group">
+    <legend>How active are you?</legend>
+    <div class="opts four">
+      <label><input type="radio" name="act" id="act1" value="1.2" checked><span>Mostly sitting</span></label>
+      <label><input type="radio" name="act" id="act2" value="1.375"><span>Lightly active</span></label>
+      <label><input type="radio" name="act" id="act3" value="1.55"><span>Active</span></label>
+      <label><input type="radio" name="act" id="act4" value="1.725"><span>Very active</span></label>
+    </div>
+    <p class="note" id="actNote"></p>
+  </fieldset>
+
+  <p class="note" id="sexHint" hidden>Choose male or female above to see results. The formula uses different numbers for each.</p>
+
+  <section class="panel" id="panelZones" role="tabpanel" aria-labelledby="tabZones">
+    <h2>Your daily ranges</h2>
+    <div class="zones">
+      <div class="zone loss"><span class="name">Lose</span><span class="range" id="rLose">–</span></div>
+      <div class="zone keep"><span class="name">Maintain</span><span class="range" id="rKeep">–</span></div>
+      <div class="zone gain"><span class="name">Gain</span><span class="range" id="rGain">–</span></div>
+    </div>
+    <p class="note" id="floorNote" hidden></p>
+    <p class="note">Calories per day, from the Mifflin-St Jeor formula. Lose is 500 under maintain, about 0.5 kg a week.</p>
+  </section>
+
+  <section class="panel" id="panelLoss" role="tabpanel" aria-labelledby="tabLoss" hidden>
+    <h2>If you eat this every day</h2>
+    <div class="fields two">
+      <label class="field" for="intake">Calories per day<input id="intake" type="text" inputmode="numeric" autocomplete="off" value="1700"></label>
+      <label class="field" for="weeks">For how many weeks<input id="weeks" type="text" inputmode="numeric" autocomplete="off" value="12"></label>
+    </div>
+    <div class="result" id="lossBox">
+      <div class="headline" id="lossHead">–</div>
+      <dl class="rows">
+        <dt>Starting weight</dt><dd id="lStart">–</dd>
+        <dt>Expected weight</dt><dd id="lEnd">–</dd>
+        <dt>Per week, at first</dt><dd id="lWeek">–</dd>
+        <dt>Your maintenance now</dt><dd id="lMaint">–</dd>
+      </dl>
+    </div>
+    <p class="note" id="lowNote" hidden></p>
+    <p class="note">Based on about 7,700 kcal per kg of body weight. Your maintenance is recalculated each day as your weight changes, so loss slows a little over time. Real results vary week to week with water and other factors.</p>
+  </section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.round(n).toLocaleString();
+const num=v=>parseFloat(String(v).replace(/[^\d.]/g,''));
+const KEY='calorie-zone-v2';
+const LB=2.20462;
+const NOTES={'1.2':'Desk job, little walking, no regular exercise.','1.375':'On your feet some of the day, or light exercise 1–3 times a week.','1.55':'Exercise 3–5 times a week, or a job with a lot of walking.','1.725':'Hard exercise most days, or a physical job.'};
+const radio=n=>{const r=document.querySelector(`input[name=${n}]:checked`);return r?r.value:null};
+
+/* tabs */
+const tabs=[['tabZones','panelZones'],['tabLoss','panelLoss']];
+function showTab(id){
+  tabs.forEach(([t,p])=>{const on=t===id;$(t).setAttribute('aria-selected',on);$(p).hidden=!on});
+  try{localStorage.setItem(KEY+'-tab',id)}catch(e){}
+}
+tabs.forEach(([t])=>$(t).addEventListener('click',()=>showTab(t)));
+try{const t=localStorage.getItem(KEY+'-tab');if(t&&$(t))showTab(t)}catch(e){}
+
+/* restore */
+try{const s=JSON.parse(localStorage.getItem(KEY));if(s){
+  ['weight','height','age','intake','weeks'].forEach(k=>{if(s[k]!=null)$(k).value=s[k]});
+  ['sex','act','unit'].forEach(n=>{const r=document.querySelector(`input[name=${n}][value="${s[n]}"]`);if(r)r.checked=true});
+}}catch(e){}
+
+/* units */
+let lastUnit=radio('unit');
+function setLabels(u){
+  $('wLab').textContent=u==='lb'?'Weight (lb)':'Weight (kg)';
+  $('hLab').textContent=u==='lb'?'Height (in)':'Height (cm)';
+}
+setLabels(lastUnit);
+document.querySelectorAll('input[name=unit]').forEach(r=>r.addEventListener('change',()=>{
+  const u=radio('unit');if(u===lastUnit)return;
+  const w=num($('weight').value), h=num($('height').value);
+  const toLb=u==='lb';
+  if(w>0)$('weight').value=String(Math.round((toLb?w*LB:w/LB)*10)/10);
+  if(h>0)$('height').value=String(Math.round((toLb?h/2.54:h*2.54)*10)/10);
+  lastUnit=u;setLabels(u);
+}));
+
+function showW(kg,unit,signed){
+  const v=unit==='lb'?kg*LB:kg;
+  const s=(Math.round(Math.abs(v)*10)/10).toFixed(1)+' '+unit;
+  return signed?(v<0?'−':'+')+s:s;
+}
+
+function update(){
+  const sex=radio('sex'), act=+radio('act'), unit=radio('unit');
+  let w=num($('weight').value), h=num($('height').value);
+  const a=num($('age').value);
+  if(unit==='lb'){w=w/LB;h=h*2.54}
+  try{localStorage.setItem(KEY,JSON.stringify({weight:$('weight').value,height:$('height').value,age:$('age').value,intake:$('intake').value,weeks:$('weeks').value,sex,act:radio('act'),unit}))}catch(e){}
+  $('actNote').textContent=NOTES[radio('act')];
+  const ready=sex&&w>0&&h>0&&a>0;
+  $('sexHint').hidden=!!sex;
+  if(!ready){
+    ['rLose','rKeep','rGain','lossHead','lStart','lEnd','lWeek','lMaint'].forEach(id=>$(id).textContent='–');
+    $('floorNote').hidden=true;$('lowNote').hidden=true;$('lossBox').className='result';return;
+  }
+  const maintAt=kg=>(10*kg+6.25*h-5*a+(sex==='m'?5:-161))*act;
+  const floor=sex==='m'?1500:1200;
+
+  /* ranges */
+  const maint=maintAt(w);
+  let lose=maint-500;
+  const clamped=lose<floor;
+  if(clamped)lose=Math.min(floor,maint-100);
+  $('rLose').textContent=fmt(lose)+' or less';
+  $('rKeep').textContent=fmt(lose+1)+' – '+fmt(maint);
+  $('rGain').textContent='over '+fmt(maint);
+  $('floorNote').hidden=!clamped;
+  $('floorNote').textContent=`Lose is set to ${fmt(lose)} instead of going lower, since eating under about ${fmt(floor)} a day isn't recommended without a doctor's guidance.`;
+
+  /* expected loss */
+  const intake=num($('intake').value), weeks=num($('weeks').value);
+  $('lStart').textContent=showW(w,unit);
+  $('lMaint').textContent=fmt(maint)+' kcal';
+  if(!(intake>0&&weeks>0)){['lossHead','lEnd','lWeek'].forEach(id=>$(id).textContent='–');$('lossBox').className='result';$('lowNote').hidden=true;return}
+  const days=Math.min(Math.round(weeks*7),3650);
+  let cur=w, week1=null;
+  for(let d=1;d<=days;d++){
+    cur-= (maintAt(cur)-intake)/7700;
+    if(d===7)week1=cur-w;
+  }
+  if(week1===null)week1=(cur-w)*7/days;
+  const change=cur-w;
+  const tiny=Math.abs(change)<0.05;
+  $('lossBox').className='result '+(tiny?'keep':change<0?'loss':'gain');
+  $('lossHead').textContent=tiny?'About no change':showW(change,unit,true)+' in '+(Math.round(weeks*10)/10)+' wk';
+  $('lEnd').textContent=showW(cur,unit);
+  $('lWeek').textContent=showW(week1,unit,true);
+  $('lowNote').hidden=!(intake<floor);
+  $('lowNote').textContent=`Eating under about ${fmt(floor)} a day isn't recommended without a doctor's guidance, and loss at very low intake is less predictable.`;
+}
+document.querySelectorAll('input').forEach(i=>i.addEventListener(i.type==='radio'?'change':'input',update));
+update();
+</script>
+</body>
+</html>
