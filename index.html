@@ -8,22 +8,22 @@
 <style>
 /* Layout: one narrow column — tabs, shared details, then the active calculator's result */
 :root{
-  --bg:#f3f5f4; --surface:#ffffff; --fg:#17201d; --muted:#5d6b66; --line:#d9e0dd;
-  --accent:#1f6f5c;
-  --loss:#2f6fb3; --keep:#2e8a5a; --gain:#c27a12;
-  --loss-soft:#e3edf8; --keep-soft:#e2f2e9; --gain-soft:#f8eddc;
+  --bg:#fafaf8; --surface:#ffffff; --fg:#15181f; --muted:#565e70; --line:#e3e3df;
+  --accent:#16665a;
+  --loss:#2c6490; --keep:#3d4454; --gain:#8a5a1a;
+  --loss-soft:#eaf1f7; --keep-soft:#f1f1ed; --gain-soft:#fbf3e6;
   --display:"Familjen Grotesk","Helvetica Neue",Arial,sans-serif;
   --body:"IBM Plex Sans",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#121816; --surface:#1a2220; --fg:#e6ece9; --muted:#97a6a0; --line:#2c3633;
-  --accent:#5cc0a2; --loss:#6fa8e6; --keep:#5fc48d; --gain:#e2a64a;
-  --loss-soft:#1b2a3a; --keep-soft:#1a2e24; --gain-soft:#33281a; color-scheme:dark}}
+  --bg:#101319; --surface:#171b23; --fg:#e9ebf0; --muted:#98a1b4; --line:#2b303a;
+  --accent:#5fbfa9; --loss:#74b2d8; --keep:#aab3c4; --gain:#d7a75c;
+  --loss-soft:#16222e; --keep-soft:#1e2230; --gain-soft:#2a2318; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#121816; --surface:#1a2220; --fg:#e6ece9; --muted:#97a6a0; --line:#2c3633;
-  --accent:#5cc0a2; --loss:#6fa8e6; --keep:#5fc48d; --gain:#e2a64a;
-  --loss-soft:#1b2a3a; --keep-soft:#1a2e24; --gain-soft:#33281a; color-scheme:dark}
+  --bg:#101319; --surface:#171b23; --fg:#e9ebf0; --muted:#98a1b4; --line:#2b303a;
+  --accent:#5fbfa9; --loss:#74b2d8; --keep:#aab3c4; --gain:#d7a75c;
+  --loss-soft:#16222e; --keep-soft:#1e2230; --gain-soft:#2a2318; color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0}
 [hidden]{display:none!important}
